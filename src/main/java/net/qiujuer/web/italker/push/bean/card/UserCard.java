@@ -39,11 +39,6 @@ public class UserCard {
     @Expose
     private LocalDateTime modifyAt;
 
-
-    public UserCard() {
-//        this(user, false);
-    }
-
     public UserCard(final User user) {
         this(user, false);
     }

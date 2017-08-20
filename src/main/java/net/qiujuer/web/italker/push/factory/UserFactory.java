@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import net.qiujuer.web.italker.push.bean.db.User;
 import net.qiujuer.web.italker.push.utils.Hib;
 import net.qiujuer.web.italker.push.utils.TextUtil;
+import org.hibernate.Session;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +25,27 @@ public class UserFactory {
 
     // 通过Phone找到User
     public static User findByPhone(String phone) {
+
+        //第一种原始写法
+//        return Hib.query(new Hib.Query<User>() {
+//            @Override
+//            public User query(Session session) {
+//                User user = (User) session.createQuery("from User where phone=:inPhone")
+//                        .setParameter("inPhone", phone)
+//                        .uniqueResult();
+//                return user;
+//            }
+//        });
+
+        //第二种lambda写法
+//        return Hib.query(session -> {
+//            User user = (User) session.createQuery("from User where phone=:inPhone")
+//                    .setParameter("inPhone", phone)
+//                    .uniqueResult();
+//            return user;
+//        });
+
+        //最精简写法
         return Hib.query(session -> (User) session
                 .createQuery("from User where phone=:inPhone")
                 .setParameter("inPhone", phone)

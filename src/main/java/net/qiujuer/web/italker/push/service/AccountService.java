@@ -1,6 +1,9 @@
 package net.qiujuer.web.italker.push.service;
 
-import net.qiujuer.web.italker.push.bean.User;
+import net.qiujuer.web.italker.push.bean.api.account.RegisterModel;
+import net.qiujuer.web.italker.push.bean.card.UserCard;
+import net.qiujuer.web.italker.push.bean.db.User;
+import net.qiujuer.web.italker.push.factory.UserFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -20,17 +23,41 @@ public class AccountService {
     }
 
 
-    //POST 127.0.0.1/api/account/login
+    //POST 127.0.0.1/api/account/register
     @POST
-    @Path("/login")
+    @Path("/register")
     // 指定请求与返回的相应体为JSON
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public User post() {
-        User user = new User();
-        user.setName("美女");
-        user.setSex(2);
-        return user;
+    public UserCard register(RegisterModel model) {
+
+        User user = UserFactory.findByPhone(model.getAccount().trim());
+        if(user != null){
+            UserCard card = new UserCard();
+            card.setName("已有了Phone");
+            return card;
+        }
+
+        user = UserFactory.findByName(model.getName().trim());
+        if(user != null){
+            UserCard card = new UserCard();
+            card.setName("已有了Name");
+            return card;
+        }
+
+        user = UserFactory.register(model.getAccount(),
+                model.getPassword(),
+                model.getName());
+        if(user != null){
+            UserCard card = new UserCard();
+            card.setName(user.getName());
+            card.setPhone(user.getPhone());
+            card.setSex(user.getSex());
+            card.setFollow(true);
+            card.setModifyAt(user.getUpdateAt());
+            return card;
+        }
+        return null;
     }
 
 }

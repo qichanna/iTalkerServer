@@ -59,4 +59,41 @@ public class UserService extends BaseService {
         return ResponseModel.buildOk(userCards);
     }
 
+    // 关注人
+    // 简化: 关注人的操作其实是双方同时关注
+    @PUT // 修改类使用Put
+    @Path("/follow/{followId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public ResponseModel<UserCard> follow(@PathParam("followId") String followId){
+        User self = getSelf();
+
+        // 不能关注自己
+        if(self.getId().equalsIgnoreCase(followId)){
+            // 返回参数异常
+            return ResponseModel.buildParameterError();
+        }
+
+        // 找到我也关注的人
+        User followUser = UserFactory.findById(followId);
+        if(followUser == null){
+            // 未找到人
+            return ResponseModel.buildNotFoundUserError(null);
+        }
+
+        // 备注默认没有, 后面可以扩展
+        followUser = UserFactory.follow(self,followUser,null);
+        if(followUser == null){
+            // 关注失败，返回服务器异常
+            return ResponseModel.buildServiceError();
+        }
+
+        // TODO 通知我关注的人我关注他
+
+        // 返回关注的人的信息
+        return ResponseModel.buildOk(new UserCard(followUser,true));
+    }
+
+    // 获取某人的信息
+
 }

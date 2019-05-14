@@ -27,27 +27,6 @@ public class UserFactory {
 
     // 通过Phone找到User
     public static User findByPhone(String phone) {
-
-        //第一种原始写法
-//        return Hib.query(new Hib.Query<User>() {
-//            @Override
-//            public User query(Session session) {
-//                User user = (User) session.createQuery("from User where phone=:inPhone")
-//                        .setParameter("inPhone", phone)
-//                        .uniqueResult();
-//                return user;
-//            }
-//        });
-
-        //第二种lambda写法
-//        return Hib.query(session -> {
-//            User user = (User) session.createQuery("from User where phone=:inPhone")
-//                    .setParameter("inPhone", phone)
-//                    .uniqueResult();
-//            return user;
-//        });
-
-        //最精简写法
         return Hib.query(session -> (User) session
                 .createQuery("from User where phone=:inPhone")
                 .setParameter("inPhone", phone)
@@ -62,10 +41,10 @@ public class UserFactory {
                 .uniqueResult());
     }
 
-    // 通过Id找到User
+    // 通过Name找到User
     public static User findById(String id) {
         // 通过Id查询，更方便
-        return Hib.query(session -> session.get(User.class,id));
+        return Hib.query(session -> session.get(User.class, id));
     }
 
     /**
@@ -120,7 +99,8 @@ public class UserFactory {
             // 那么需要单点登录，让之前的设备退出账户，
             // 给之前的设备推送一条退出消息
             if (Strings.isNullOrEmpty(user.getPushId())) {
-                // TODO 推送一个退出消息
+                // 推送一个退出消息
+                PushFactory.pushLogout(user, user.getPushId());
             }
 
             // 更新新的设备Id
@@ -233,52 +213,55 @@ public class UserFactory {
         return TextUtil.encodeBase64(password);
     }
 
+
     /**
      * 获取我的联系人的列表
-     * @param self
-     * @return
+     *
+     * @param self User
+     * @return List<User>
      */
-    public static List<User> contacts(User self){
+    public static List<User> contacts(User self) {
         return Hib.query(session -> {
-            // 重新加载一次用户信息到self中,和当前的session绑定
-            session.load(self,self.getId());
+            // 重新加载一次用户信息到self中，和当前的session绑定
+            session.load(self, self.getId());
 
             // 获取我关注的人
             Set<UserFollow> flows = self.getFollowing();
+
             // 使用简写方式
             return flows.stream()
-//                    .map(flow -> {return flow.getTarget();})
                     .map(UserFollow::getTarget)
                     .collect(Collectors.toList());
-
 
         });
     }
 
     /**
      * 关注人的操作
+     *
      * @param origin 发起者
      * @param target 被关注的人
-     * @param alias 备注名
-     * @return 被关注人的信息
+     * @param alias  备注名
+     * @return 被关注的人的信息
      */
-    public static User follow(final User origin, final User target, final String alias){
-        UserFollow follow = getUserFollow(origin,target);
-        if(follow != null){
+    public static User follow(final User origin, final User target, final String alias) {
+        UserFollow follow = getUserFollow(origin, target);
+        if (follow != null) {
             // 已关注，直接返回
             return follow.getTarget();
         }
+
         return Hib.query(session -> {
             // 想要操作懒加载的数据，需要重新load一次
-            session.load(origin,origin.getId());
-            session.load(target,target.getId());
+            session.load(origin, origin.getId());
+            session.load(target, target.getId());
 
-            // 我关注人的时候，同时他也关注我,
+            // 我关注人的时候，同时他也关注我，
             // 所有需要添加两条UserFollow数据
             UserFollow originFollow = new UserFollow();
             originFollow.setOrigin(origin);
             originFollow.setTarget(target);
-            // 备注是我对他的备注,他对我默认没有备注
+            // 备注是我对他的备注，他对我默认没有备注
             originFollow.setAlias(alias);
 
             // 发起者是他，我是被关注的人的记录
@@ -294,18 +277,21 @@ public class UserFactory {
         });
     }
 
+
     /**
      * 查询两个人是否已经关注
+     *
      * @param origin 发起者
      * @param target 被关注人
      * @return 返回中间类UserFollow
      */
-    public static UserFollow getUserFollow(final User origin, final User target){
-        return Hib.query(session -> (UserFollow)session.createQuery("from UserFollow where originId = :originId and targetId = :targetId")
-                .setParameter("originId",origin.getId())
-                .setParameter("targetId",target.getId())
+    public static UserFollow getUserFollow(final User origin, final User target) {
+        return Hib.query(session -> (UserFollow) session
+                .createQuery("from UserFollow where originId = :originId and targetId = :targetId")
+                .setParameter("originId", origin.getId())
+                .setParameter("targetId", target.getId())
                 .setMaxResults(1)
-                // 查询一条数据
+                // 唯一查询返回
                 .uniqueResult());
     }
 
@@ -332,5 +318,4 @@ public class UserFactory {
         });
 
     }
-
 }
